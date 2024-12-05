@@ -71,11 +71,11 @@ const rl = readline.createInterface({
     output: process.stdout,
 });
 
-rl.question("Enter something: ", (input) => {
+rl.question("Enter something: ", async (input) => {
     const out = tokenizer(input)
     console.log(out)
     const out2 = parser(out)
-    console.log(out2)
+    console.log(out2.body[0].params)
 
     rl.close();
 });
@@ -201,4 +201,39 @@ function parser(tokens) {
     }
 
     return ast;
+}
+
+
+function traverser(ast,visiter){
+    function traverseArray(array,parent){
+        array.forEach(child => {
+            traverseNode(child,parent)
+        });
+    }
+    function traverseNode(node,parent){
+        
+        let methods = visiter[node.type]
+
+        if (methods && methods.enter){
+            methods.enter(node,parent)
+        }
+        
+        if (node.type == 'CallExpression'){
+            traverseArray(node.params,node)
+        }
+        else if (node.type == 'Program'){
+            traverseArray(node.body,node)
+        }
+        else if (node.type == 'NumberLiteral' || node.type == 'StringLiteral' ){
+        }
+        else{
+            throw new TypeError(node.type)
+        }
+        if (methods && methods.exit){
+            methods.exit(node,parent)
+        }
+    }
+
+    traverseNode(ast,null)
+
 }
